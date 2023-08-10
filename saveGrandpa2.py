@@ -98,7 +98,7 @@ def saveGrandpa(day):
 
 def killGrandpa(day):
     c = len(days)
-    d = abs(c-day)  # 每天空弹夹-1
+    d = abs(c-day+1)  # 每天空弹夹-1
     if d == 0:  # 解决除数为0问题
         d = 1
     p = 1/d
