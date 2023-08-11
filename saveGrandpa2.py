@@ -21,10 +21,10 @@ def custom_print(*args, **kwargs):
 
 
 results = []
-days = [1, 2, 3, 4, 5, 6, 7]
+days = [1, 2, 3, 4, 5, 6]
 
 # 模拟次数
-totaldays = 500
+totaldays = 5000
 
 
 def main():
@@ -64,7 +64,7 @@ def printResult():
 '''
 bug: bros>1 时，存活率与bros值分布过于规律
         for i in days:
-            filters = [gp for gp in bros_filters if gp.day >=
+            filters = [gp for gp in bros_filters if gp.day <=
                        i and gp.survive]  # 第7天活着的第7-1天肯定活着，所以要一起统计
             p = len(filters)/d
             custom_print('第{}夜，存活概率为：{:0>5.2f}%'.format(
@@ -91,7 +91,6 @@ def simNGame(n):
         simOneGame(4)
         simOneGame(5)
         simOneGame(6)
-        simOneGame(7)
         pass
 
 
