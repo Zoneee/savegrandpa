@@ -1,4 +1,5 @@
 import random
+import itertools
 
 
 class Grandpa:
@@ -6,7 +7,7 @@ class Grandpa:
     def __init__(self, save, survive, day, bros):
         self.save = save
         self.survive = survive
-        self.day = day
+        self.day = day  # 存活天数
         self.bros = bros
 
 
@@ -21,16 +22,33 @@ def custom_print(*args, **kwargs):
 
 
 results = []
-days = [1, 2, 3, 4, 5, 6, 7]
+days = [1, 2, 3, 4, 5, 6]
 
 # 模拟次数
-totaldays = 500
+simnum = 5000
 
 
 def main():
     intro()
-    simNGame(totaldays)
-    printResult()
+    survivedModes = generateModes()
+    for mode in survivedModes:
+        results.clear()
+        simNGame(simnum, mode)
+        printResult()
+
+
+def generateModes():
+    result = []
+    for a in range(7):
+        for b in range(7):
+            for c in range(7):
+                for d in range(7):
+                    for e in range(7):
+                        for f in range(7):
+                            for g in range(7):
+                                if a + b + c + d + e + f + g == 6:
+                                    result.append([a, b, c, d, e, f, g])
+    return result
 
 
 def printResult():
@@ -47,29 +65,56 @@ def printResult():
     '''
     custom_print('模拟结束')
     custom_print('{:=<20}'.format('='))
+    computeSurvived()
+    computeSaved()
+    custom_print('{:*<20}'.format('*'))
+
+
+def computeSaved():
+    custom_print('{1:=<20}救出概率{1:=<20}'.format(1, '='))
+
+    for j in days:
+        filters = [gp for gp in results if gp.day == j and gp.save]
+        p = len(filters)/simnum
+        custom_print('第{}昼，救出概率为：{:0>5.2f}%'.format(
+            j, (p)*100))
+    pass
+
+
+def computeSurvived():
+    custom_print('{1:=<20}存活概率{1:=<20}'.format(1, '='))
+    # formation1()
+    formation2()
+    pass
+
+
+def formation1():
+    # day1存活人数=活着 && day>=day1
+    # day2的人（不论死活）day1一定活着，所以统计day2的存活人数=总人口-day1死亡-day2死亡
+    total = len([gp for gp in results if gp.bros == 2])  # 筛选营救模式为2的数据
+    custom_print(
+        'f1。{1:=<20}行动模式：每天{0}行动一次，每次行动{0}人。{1:=<20}'.format(2, '='))
     for i in days:
-        bros_filters = [gp for gp in results if gp.bros == i]
-        d = len(bros_filters)
-        if d == 0:
-            d = 1
-        custom_print('{1:=<20}行动模式：每天{0}行动一次，每次行动{0}人。{1:=<20}'.format(i, '='))
-
-        for i in days:
-            filters = [gp for gp in bros_filters if gp.day == i and gp.save]
-            p = len(filters)/d
-            custom_print('第{}昼，救出概率为：{:0>5.2f}%'.format(
-                i, (p)*100))
+        survived = len(
+            [gp for gp in results if gp.survive and gp.day >= i and gp.bros == 2])
+        p = survived/total
+        custom_print('第{}夜，存活概率为：{:0>5.2f}%'.format(i, (p)*100))
+    pass
 
 
-'''
-bug: bros>1 时，存活率与bros值分布过于规律
-        for i in days:
-            filters = [gp for gp in bros_filters if gp.day >=
-                       i and gp.survive]  # 第7天活着的第7-1天肯定活着，所以要一起统计
-            p = len(filters)/d
-            custom_print('第{}夜，存活概率为：{:0>5.2f}%'.format(
-                i, (p)*100))
-'''
+def formation2():
+    total = simnum
+    dieds = 0
+    for i in days:
+        # day1的死亡人数
+        dayDieds = len(
+            [gp for gp in results if gp.day == i and not gp.survive])
+        # dayN为止的总死亡人数
+        dieds += dayDieds
+        surviveds = total-dieds
+        p = surviveds/total
+        custom_print('第{}夜，存活概率为：{:0>5.2f}%'.format(i, (p)*100))
+    pass
 
 
 def intro():
@@ -79,62 +124,62 @@ def intro():
     with open('output.txt', 'w') as f:  # 重置输出
         pass
     custom_print('模拟葫芦娃救爷爷，求出葫芦娃第几天去救爷爷的成功率最大')
-    custom_print('模拟次数：{}'.format(totaldays))
+    custom_print('模拟次数：{}'.format(simnum))
     custom_print('{:=<20}'.format('='))
 
 
-def simNGame(n):
+def simNGame(n, mode):
+    '''
+    模拟N局游戏
+    '''
+    custom_print('营救模式：{}'.format(mode))
     for i in range(n):
-        simOneGame(1)
-        simOneGame(2)
-        simOneGame(3)
-        simOneGame(4)
-        simOneGame(5)
-        simOneGame(6)
-        simOneGame(7)
+        simOneGame(mode)
         pass
 
 
-def simOneGame(bros):
+def simOneGame(mode):
     '''
-    7天视作一局
-    bros=1 代表每天排一人营救
-    bros=3 代表跳过前两天，第三天排三人营救
-    默认没救出爷爷，爷爷存活
-    '''
+    模拟一局，6天视作一局
 
+    args:
+    mode: 行动模式数组
     '''
-    行动顺序
-    每n天白天进行营救
-    不论是否执行营救，都在当天晚进行轮盘赌
-    
-    救
-    没救出》判断死亡
-    救出》无动作
-    '''
-    gp = Grandpa(False, True, 0, bros)
+    gp = Grandpa(False, True, 0, 0)
     results.append(gp)
-    start, stop, step = 1, 8, bros
-    for i in range(start, stop):
-        gp.day = i
-        if i % bros == 0:  # 凑齐人数
-            if morningAction(bros):
-                gp.save = True
-                break
-
-            if i+step > len(days):  # 下次步长超过最后一天则强制出兵，强制出兵则无需执行夜晚行动，拯救失败以为着必死
-                gp.day = len(days)
-                bros = len(days)-i
-                if morningAction(bros):
-                    gp.save = True
-                    break
-                else:
-                    gp.survive = False
-                    break
-
-        if nightAction(i):
-            gp.survive = False
+    day = 1
+    for bros in mode:
+        gp.day = day
+        gp.bros = bros
+        survived, saved = simOneDay(day, bros)
+        if saved or not survived:
+            gp.save = saved
+            gp.survive = survived
             break
+        day += 1
+    pass
+
+
+def simOneDay(day, bros):
+    '''
+    模拟一天
+
+    args：
+    day: 第几天
+    bros: 当天出发的营救人数
+
+    return
+    bool: 人物是否存活
+    bool: 人物是否救出
+    '''
+
+    if morningAction(bros):
+        return True, True
+
+    if nightAction(day):
+        return False, False
+
+    return True, False
 
 
 def bronNBros(n):
@@ -143,10 +188,28 @@ def bronNBros(n):
 
 
 def morningAction(bros):
+    '''
+    白天行动：营救
+
+    args:
+    bros: 出动人数
+
+    result:
+    bool: 营救成功
+    '''
     return saveGrandpa(bros)
 
 
 def nightAction(day):
+    '''
+    夜晚行动：轮盘赌
+
+    args:
+    day: 天数
+
+    result:
+    bool: 死亡
+    '''
     return killGrandpa(day)
 
 
@@ -160,10 +223,10 @@ def saveGrandpa(bros):
 
 def killGrandpa(day):
     c = len(days)
-    d = abs(c-day+1)  # 每天空弹夹-1
+    d = abs(c-day+1)  # 每天弹夹-1，第一天不减
     if d == 0:  # 解决除数为0问题
         d = 1
-    p = 1/d
+    p = 1/d  # 中弹概率
     r = random.random()
     # print('存活概率：{}>>>>实际概率：{}'.format(1-p, 1-r))
     return r < p
